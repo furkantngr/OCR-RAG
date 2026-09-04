@@ -1,0 +1,80 @@
+# MakineRAG yapilandirmasi
+# Belgeler Ingilizce/Romence, ciktilar ve basliklar Turkce uretilir.
+
+proje:
+  ad: MakineRAG
+  cikti_dili: Turkce
+
+yollar:
+  pdf_dizini: D:/MakineRAG/data/pdf
+  ocr_dizini: D:/MakineRAG/data/ocr
+  index_dizini: D:/MakineRAG/data/index
+  manifest: D:/MakineRAG/data/manifest.jsonl
+  rapor_dizini: D:/MakineRAG/data/raporlar
+
+ocr:
+  diller: "ron+eng"      # tesseract dil paketleri (Romence + Ingilizce)
+  dpi: 300
+  metin_esigi: 120       # sayfada bu kadar karakterden az metin varsa OCR calisir
+  isci_sayisi: 4         # paralel surec sayisi (CPU cekirdegi kadar, 4-8 arasi)
+  tesseract_yolu: ""     # bos ise PATH'te aranir, ornek: C:/Program Files/Tesseract-OCR/tesseract.exe
+  psm: 3                 # tesseract sayfa segmentasyon modu
+
+parcalama:
+  strateji: yapisal      # yapisal | sabit | anlamsal
+                         #   yapisal  - bolum basliklarinda boler, tablolari bolmez (onerilen)
+                         #   sabit    - sabit boyutlu, en basit ve en hizli
+                         #   anlamsal - paragraflari gomup kosinus kirilmasindan boler (pahali)
+                         # Karsilastirmak icin:
+                         #   scripts/gomme_karsilastir.py --parcalayici sabit yapisal
+  baglam_oneki: true     # gomulen metnin basina [Belge: ... | Makine: ... | Bolum: ...]
+                         # ekler. Turkce sorgu <-> EN/RO belge eslesmesini belirgin iyilestirir.
+  boyut: 1400            # karakter
+  ortusme: 220
+
+gomme:
+  saglayici: sentence-transformers   # veya: ollama
+  model: BAAI/bge-m3                 # cok dilli (TR sorgu -> EN/RO belge eslesmesi icin)
+                                     # alternatif: Qwen/Qwen3-Embedding-0.6B (yari boyut)
+                                     # hangisi daha iyi -> scripts/gomme_karsilastir.py
+  ollama_model: nomic-embed-text     # saglayici=ollama ise (tek dilli, sadece hizli deneme)
+  cihaz: cuda                        # cuda | cpu
+  batch: 8
+  yari_hassasiyet: false             # true -> fp16, VRAM yarilanir; LLM ile yan yana icin
+  azami_uzunluk: 1024                # token. Modellerin varsayilani cok buyuk olabilir
+                                     # (Qwen3-Embedding 32768). Parcalar ~400 token oldugu
+                                     # icin dusurmek kaliteyi etkilemez, kodlamayi hizlandirir.
+  # onek_sorgu / onek_belge model ailesine gore otomatik secilir (src/embed.py).
+  # Listede olmayan ozel bir model kullaniyorsaniz elle verin:
+  #   onek_sorgu: "query: "
+  #   onek_belge: "passage: "
+
+vektor:
+  koleksiyon: belgeler
+
+llm:
+  saglayici: ollama
+  model: llama3.1:8b       # Bu makinede dogrulanmis calisan model.
+                           # NOT: gemma4:12b ve gemma4:e4b bu Ollama/surucu birlesiminde
+                           # "llama-server terminated ... CUDA error" ile cokuyor (her
+                           # baglam boyutunda). Denemek isterseniz once tek soru ile test
+                           # edin. Calisan alternatifler: deepseek-r1:7b.
+  taban_url: http://localhost:11434
+  sicaklik: 0.1
+  baglam: 8192
+
+arama:
+  dense_k: 30
+  bm25_k: 30
+  final_k: 8
+  sorgu_cevirisi: true     # Turkce sorguyu BM25 icin EN/RO'ya da cevir
+
+# Makine tanimlari. Filtreleme ve baslik uretimi bu listeye gore yapilir.
+# Belgelerinizdeki gercek makine adlarini/kodlarini buraya yazin.
+makineler:
+  - kod: "A"
+    ad: "Makine A"
+    takma_adlar: ["Machine A", "Masina A", "MK-A", "TYPE-A"]
+  - kod: "B"
+    ad: "Makine B"
+    takma_adlar: ["Machine B", "Masina B", "MK-B", "TYPE-B"]

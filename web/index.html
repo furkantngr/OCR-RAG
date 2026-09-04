@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="tr" data-tema="koyu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MakineRAG — Teknik Doküman Asistanı</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+</head>
+<body>
+
+<!-- ══════════════ ÜST BAR ══════════════ -->
+<header class="ust-bar">
+  <div class="marka">
+    <svg viewBox="0 0 24 24" class="marka-logo" aria-hidden="true">
+      <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+      <path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1l-.4-2.6h-3.9l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.6h3.9l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6z"/>
+    </svg>
+    <span class="marka-ad">Makine<b>RAG</b></span>
+  </div>
+
+  <nav class="sekmeler" role="tablist">
+    <button class="sekme aktif" data-sekme="sohbet" role="tab">
+      <svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></svg>
+      Sohbet
+    </button>
+    <button class="sekme" data-sekme="belgeler" role="tab">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      Belgeler
+      <span class="sekme-sayi" id="sekme-belge-sayi"></span>
+    </button>
+    <button class="sekme" data-sekme="rapor" role="tab">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 3 5-7"/></svg>
+      Konu Haritası
+    </button>
+  </nav>
+
+  <div class="ust-sag">
+    <div class="rozet" id="rozet-durum" title="Sistem durumu">
+      <span class="nokta bekle"></span><span id="rozet-metin">bağlanıyor…</span>
+    </div>
+    <button class="ikon-dugme" id="tema-dugme" title="Aydınlık / karanlık tema" aria-label="Tema değiştir">
+      <svg viewBox="0 0 24 24" class="ikon-ay"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg viewBox="0 0 24 24" class="ikon-gunes"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="govde">
+
+  <!-- ══════════════ YAN PANEL ══════════════ -->
+  <aside class="yan-panel" id="yan-panel">
+    <div class="yan-bolum">
+      <div class="yan-baslik">Makine filtresi</div>
+      <div class="makine-liste" id="makine-liste">
+        <div class="iskele" style="height:38px"></div>
+        <div class="iskele" style="height:38px"></div>
+      </div>
+    </div>
+
+    <div class="yan-bolum">
+      <div class="yan-baslik">Belge türü</div>
+      <select id="tur-secim" class="secim">
+        <option value="">Tüm türler</option>
+      </select>
+    </div>
+
+    <div class="yan-bolum yan-istatistik">
+      <div class="yan-baslik">Bilgi tabanı</div>
+      <div class="ist-satir"><span>Belge</span><b id="ist-belge">—</b></div>
+      <div class="ist-satir"><span>Sayfa</span><b id="ist-sayfa">—</b></div>
+      <div class="ist-satir"><span>OCR&#39;lı sayfa</span><b id="ist-ocr">—</b></div>
+      <div class="ist-satir"><span>Metin parçası</span><b id="ist-parca">—</b></div>
+    </div>
+
+    <div class="yan-bolum yan-motor">
+      <div class="yan-baslik">Modeller</div>
+      <div class="motor-satir">
+        <span class="motor-etiket">Üretim</span>
+        <code id="motor-llm">—</code>
+      </div>
+      <div class="motor-satir">
+        <span class="motor-etiket">Gömme</span>
+        <code id="motor-gomme">—</code>
+      </div>
+      <p class="yan-not">Tüm işlem bu bilgisayarda çalışır. Belgeler dışarı çıkmaz.</p>
+    </div>
+  </aside>
+
+  <!-- ══════════════ İÇERİK ══════════════ -->
+  <main class="icerik">
+
+    <!-- ─── SOHBET ─── -->
+    <section class="sekme-icerik aktif" id="sekme-sohbet">
+      <div class="mesajlar" id="mesajlar">
+        <div class="bos-durum" id="bos-durum">
+          <svg viewBox="0 0 24 24" class="bos-ikon">
+            <path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/>
+          </svg>
+          <h2>Belgelerinize Türkçe soru sorun</h2>
+          <p>İngilizce ve Romence taranmış dokümanlar aranır, cevap Türkçe ve kaynak referanslı gelir.</p>
+          <div class="ornekler" id="ornekler">
+            <button class="ornek">Bu makinenin yağ değişim aralığı nedir?</button>
+            <button class="ornek">Devreye alma sırasında yapılması gereken kontroller neler?</button>
+            <button class="ornek">Hangi hata kodları acil durdurma gerektirir?</button>
+            <button class="ornek">Yedek parça listesinde rulman numaraları neler?</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="besteci-sarmal">
+        <div class="besteci">
+          <div class="besteci-ust" id="besteci-ust" hidden>
+            <span class="filtre-cip" id="filtre-cip"></span>
+          </div>
+          <div class="giris-kutu">
+            <textarea id="soru" rows="1" placeholder="Sorunuzu Türkçe yazın…" autocomplete="off"></textarea>
+            <button class="gonder-dugme" id="gonder" title="Gönder (Enter)">
+              <svg viewBox="0 0 24 24" class="ikon-gonder"><path d="M4 12l16-8-6 8 6 8z"/></svg>
+              <svg viewBox="0 0 24 24" class="ikon-dur"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+            </button>
+          </div>
+          <div class="besteci-alt">
+            <span><kbd>Enter</kbd> gönder · <kbd>Shift</kbd>+<kbd>Enter</kbd> satır</span>
+            <button class="metin-dugme" id="temizle-sohbet">Sohbeti temizle</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── BELGELER ─── -->
+    <section class="sekme-icerik" id="sekme-belgeler">
+      <div class="arac-cubugu">
+        <div class="ara-kutu">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input type="search" id="belge-ara" placeholder="Başlık, dosya adı, özet veya anahtar kelime ara…">
+        </div>
+        <div class="arac-sag">
+          <span class="sonuc-sayi" id="belge-sayi">—</span>
+        </div>
+      </div>
+
+      <div class="tablo-sarmal">
+        <table class="tablo" id="belge-tablo">
+          <thead>
+            <tr>
+              <th class="sirali" data-alan="baslik_tr">Başlık (TR)</th>
+              <th class="sirali" data-alan="dosya_adi">Dosya</th>
+              <th class="sirali" data-alan="makine">Makine</th>
+              <th class="sirali" data-alan="belge_turu">Tür</th>
+              <th class="sirali sag" data-alan="sayfa_sayisi">Sayfa</th>
+              <th class="sag">Kaynak</th>
+            </tr>
+          </thead>
+          <tbody id="belge-govde"></tbody>
+        </table>
+        <div class="tablo-alt">
+          <button class="ikincil-dugme" id="daha-fazla" hidden>Daha fazla yükle</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── KONU HARİTASI ─── -->
+    <section class="sekme-icerik" id="sekme-rapor">
+      <div class="rapor-duzen">
+        <div class="rapor-yan">
+          <div class="yan-baslik">Raporlar</div>
+          <div id="rapor-liste" class="rapor-liste"></div>
+          <div class="yan-baslik" style="margin-top:20px">Yeni rapor üret</div>
+          <div id="rapor-uret-liste" class="rapor-uret-liste"></div>
+          <div id="is-liste" class="is-liste"></div>
+        </div>
+        <div class="rapor-govde" id="rapor-govde">
+          <div class="bos-durum kucuk">
+            <h2>Konu haritası</h2>
+            <p>Bir makinenin tüm belgelerinden çıkarılmış Türkçe başlık ağacı. Soldan bir rapor seçin
+               ya da yeni bir tane üretin.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════ BELGE ÇEKMECESİ ══════════════ -->
+<div class="cekmece-perde" id="cekmece-perde" hidden></div>
+<aside class="cekmece" id="cekmece" hidden>
+  <div class="cekmece-ust">
+    <div>
+      <div class="cekmece-baslik" id="cekmece-baslik"></div>
+      <div class="cekmece-alt-baslik" id="cekmece-dosya"></div>
+    </div>
+    <button class="ikon-dugme" id="cekmece-kapat" aria-label="Kapat">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="cekmece-govde" id="cekmece-govde"></div>
+</aside>
+
+<div class="bildirim-alani" id="bildirim-alani"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

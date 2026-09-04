@@ -1,0 +1,21 @@
+# --- PDF & OCR ---
+pymupdf>=1.24
+pytesseract>=0.3.13
+pillow>=10.3
+
+# --- Gomme & vektor ---
+numpy>=1.26
+sentence-transformers>=3.0
+chromadb>=0.5.5
+rank-bm25>=0.2.2
+
+# --- LLM istemcisi ---
+requests>=2.32
+
+# --- Web sunucusu & arayuz ---
+fastapi>=0.115
+uvicorn[standard]>=0.30
+
+# --- CLI ---
+tqdm>=4.66
+pyyaml>=6.0
